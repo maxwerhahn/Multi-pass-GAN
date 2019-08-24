@@ -26,7 +26,7 @@ import paramhelpers as ph
 steps    = 120
 simNo    = 1000  # start ID
 showGui  = 0
-basePath = 'V:/data3d_sliced_growing2/'
+basePath = '../data3d_growing/'
 npSeedstr   = "-1"
 dim         = 3
 
