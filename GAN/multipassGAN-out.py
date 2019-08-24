@@ -341,12 +341,12 @@ with tf.variable_scope("gen_1", reuse=True) as scope:
 	sampler = gen_model(x_in, use_batch_norm=batch_norm, reuse = tf.AUTO_REUSE, currentUpres = int(round(math.log(upRes, 2))), train=False, percentage = percentage, output = True, firstGen = True, filterSize = filterSize_1, startFms = start_fms_1, maxFms = max_fms_1, add_adj_idcs = add_adj_idcs1, first_nn_arch = firstNNArch, use_res_net=use_res_net1)
 	
 # second generator
-x_in_2 = tf.concat((tf.reshape(y, shape = [-1, tileSizeHigh, tileSizeHigh, 1]), tf.image.resize_images(tf.reshape(x, shape = [-1, tileSizeLow, tileSizeLow, n_inputChannels]), tf.constant([tileSizeHigh, tileSizeHigh], dtype= tf.int32), method=0)), axis = 3)
+x_in_2 = tf.concat((tf.reshape(y, shape = [-1, tileSizeHigh, tileSizeHigh, 1]), tf.image.resize_images(tf.reshape(x, shape = [-1, tileSizeLow, tileSizeLow, n_inputChannels]), tf.constant([tileSizeHigh, tileSizeHigh], dtype= tf.int32), method=1)), axis = 3)
 with tf.variable_scope("gen_2", reuse=True) as scope:
 	sampler_2 = gen_model(x_in_2, use_batch_norm=batch_norm, reuse = tf.AUTO_REUSE, currentUpres = int(round(math.log(upRes, 2))), train=False, percentage = percentage, output = True, firstGen = False, filterSize = filterSize_2, startFms = start_fms_2, maxFms = max_fms_2, add_adj_idcs = add_adj_idcs2, first_nn_arch = False, use_res_net=use_res_net2)
 	
 # second generator
-x_in_3 = tf.concat((tf.reshape(y, shape = [-1, tileSizeHigh, tileSizeHigh, 1]), tf.image.resize_images(tf.reshape(x, shape = [-1, tileSizeLow, tileSizeLow, n_inputChannels]), tf.constant([tileSizeHigh, tileSizeHigh], dtype= tf.int32), method=0)), axis = 3)
+x_in_3 = tf.concat((tf.reshape(y, shape = [-1, tileSizeHigh, tileSizeHigh, 1]), tf.image.resize_images(tf.reshape(x, shape = [-1, tileSizeLow, tileSizeLow, n_inputChannels]), tf.constant([tileSizeHigh, tileSizeHigh], dtype= tf.int32), method=1)), axis = 3)
 with tf.variable_scope("gen_3", reuse=True) as scope:
 	sampler_3 = gen_model(x_in_3, use_batch_norm=batch_norm, reuse = tf.AUTO_REUSE, currentUpres = int(round(math.log(upRes, 2))), train=False, percentage = percentage, output = True, firstGen = False, filterSize = filterSize_3, startFms = start_fms_3, maxFms = max_fms_3, add_adj_idcs = add_adj_idcs3, first_nn_arch = False, use_res_net=use_res_net3)
 	
@@ -380,19 +380,19 @@ def generate3DUniForNewNetwork(imageindex = 0, outPath = '../', inputPer = 3.0, 
 	# z y x -> 2d conv on y - x (or different combination of axis, depending on transposeAxis)
 	# and switch velocity channels depending on orientation
 	if transposeAxis == 1:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,upRes,1,1] , order = 1), [-1, simSizeHigh, simSizeLow, n_inputChannels])
+		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,upRes,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeHigh, simSizeLow, n_inputChannels])
 		batch_xs_in = np.reshape(batch_xs_in.transpose(1,0,2,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
 		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
 		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,2:3])
 		batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)	
 	elif transposeAxis == 2:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
+		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
 		batch_xs_in = np.reshape(batch_xs_in.transpose(2,1,0,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
 		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
 		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,1:2])
 		batch_xs_in[:,:,:,1:2] = np.copy(temp_vel)
 	elif transposeAxis == 3:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
+		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
 		batch_xs_in = np.reshape(batch_xs_in.transpose(2,0,1,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
 		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
 		temp_vel2 = np.copy(batch_xs_in[:,:,:,2:3])
@@ -400,7 +400,7 @@ def generate3DUniForNewNetwork(imageindex = 0, outPath = '../', inputPer = 3.0, 
 		batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)
 		batch_xs_in[:,:,:,1:2] = np.copy(temp_vel2)
 	else:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[upRes,1,1,1] , order = 1), [-1, simSizeLow, simSizeLow, n_inputChannels])					
+		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[upRes,1,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeLow, n_inputChannels])					
 			
 	if add_adj_idcs1:		
 		batch_xs_in = np.concatenate((batch_xs_in, np.zeros_like(batch_xs_in[:,:,:,0:1])),  axis= 3)		
@@ -440,22 +440,22 @@ def generate3DUniForNewNetwork(imageindex = 0, outPath = '../', inputPer = 3.0, 
 		
 	dim_output = np.copy(np.array(intermed_res1).reshape(simSizeHigh, simSizeHigh, simSizeHigh)).transpose(2,1,0)
 		
-	save_img_3d( outPath + 'source_{:04d}.png'.format(imageindex+frame_min), dim_output/80)	
+	save_img_3d( outPath + 'source_1st_{:04d}.png'.format(imageindex+frame_min), dim_output/80)	
 
 	if transposeAxis == 3:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,upRes,1,1] , order = 1), [-1, simSizeHigh, simSizeLow, n_inputChannels])
+		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,upRes,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeHigh, simSizeLow, n_inputChannels])
 		batch_xs_in = np.reshape(batch_xs_in.transpose(1,0,2,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
 		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
 		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,2:3])
 		batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)	
 	elif transposeAxis == 0:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
+		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
 		batch_xs_in = np.reshape(batch_xs_in.transpose(2,1,0,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
 		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
 		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,1:2])
 		batch_xs_in[:,:,:,1:2] = np.copy(temp_vel)
 	elif transposeAxis == 1:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
+		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
 		batch_xs_in = np.reshape(batch_xs_in.transpose(2,0,1,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
 		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
 		temp_vel2 = np.copy(batch_xs_in[:,:,:,2:3])
@@ -463,7 +463,7 @@ def generate3DUniForNewNetwork(imageindex = 0, outPath = '../', inputPer = 3.0, 
 		batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)
 		batch_xs_in[:,:,:,1:2] = np.copy(temp_vel2)
 	else:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[upRes,1,1,1] , order = 1), [-1, simSizeLow, simSizeLow, n_inputChannels])					
+		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[upRes,1,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeLow, n_inputChannels])					
 			
 	if add_adj_idcs2:		
 		batch_xs_in = np.concatenate((batch_xs_in, np.zeros_like(batch_xs_in[:,:,:,0:1])),  axis= 3)		
@@ -499,22 +499,24 @@ def generate3DUniForNewNetwork(imageindex = 0, outPath = '../', inputPer = 3.0, 
 	
 	print("time for second network: {0:.6f}".format(end-start))
 	
-	dim_output = np.array(intermed_res1).reshape(simSizeHigh, simSizeHigh, simSizeHigh).transpose(1,2,0)
+	#dim_output = np.array(intermed_res1).reshape(simSizeHigh, simSizeHigh, simSizeHigh).transpose(1,2,0)
 				
+	save_img_3d( outPath + 'source_2nd_{:04d}.png'.format(imageindex+frame_min), dim_output/80)	
+	
 	if transposeAxis == 0:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,upRes,1,1] , order = 1), [-1, simSizeHigh, simSizeLow, n_inputChannels])
+		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,upRes,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeHigh, simSizeLow, n_inputChannels])
 		batch_xs_in = np.reshape(batch_xs_in.transpose(1,0,2,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
 		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
 		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,2:3])
 		batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)	
 	elif transposeAxis == 3:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
+		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
 		batch_xs_in = np.reshape(batch_xs_in.transpose(0,2,1,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
 		temp_vel = np.copy(batch_xs_in[:,:,:,2:3])
 		batch_xs_in[:,:,:,2:3] = np.copy(batch_xs_in[:,:,:,1:2])
 		batch_xs_in[:,:,:,1:2] = np.copy(temp_vel)
 	elif transposeAxis == 2:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
+		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
 		batch_xs_in = np.reshape(batch_xs_in.transpose(1,2,0,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
 		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
 		temp_vel2 = np.copy(batch_xs_in[:,:,:,13])
@@ -522,7 +524,7 @@ def generate3DUniForNewNetwork(imageindex = 0, outPath = '../', inputPer = 3.0, 
 		batch_xs_in[:,:,:,2:3] = np.copy(batch_xs_in[:,:,:,1:2])
 		batch_xs_in[:,:,:,1:2] = np.copy(temp_vel)
 	else:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[upRes,1,1,1] , order = 1), [-1, simSizeLow, simSizeLow, n_inputChannels])					
+		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[upRes,1,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeLow, n_inputChannels])					
 			
 	if add_adj_idcs3:		
 		batch_xs_in = np.concatenate((batch_xs_in, np.zeros_like(batch_xs_in[:,:,:,0:1])),  axis= 3)		
@@ -556,9 +558,9 @@ def generate3DUniForNewNetwork(imageindex = 0, outPath = '../', inputPer = 3.0, 
 				f.write(chrome_trace)
 	end = time.time()
 	
-	print("time for second network: {0:.6f}".format(end-start))
+	print("time for third network: {0:.6f}".format(end-start))
 	
-	dim_output = np.array(intermed_res1).reshape(simSizeHigh, simSizeHigh, simSizeHigh)
+	#dim_output = np.array(intermed_res1).reshape(simSizeHigh, simSizeHigh, simSizeHigh)
 				
 	if transposeAxis == 0:
 		dim_output = dim_output.transpose(1,0,2)		
@@ -567,7 +569,7 @@ def generate3DUniForNewNetwork(imageindex = 0, outPath = '../', inputPer = 3.0, 
 	elif transposeAxis == 2:
 		dim_output = dim_output.transpose(2,0,1)	
 		
-	save_img_3d( outPath + 'source_{:04d}.png'.format(imageindex+frame_min), dim_output/80)	
+	save_img_3d( outPath + 'source_3rd_{:04d}.png'.format(imageindex+frame_min), dim_output/80)	
 	
 	# output for images of slices (along every dimension)
 	if 1:

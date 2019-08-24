@@ -1,7 +1,7 @@
 #******************************************************************************
 #
 # tempoGAN: A Temporally Coherent, Volumetric GAN for Super-resolution Fluid Flow
-# Copyright 2018 You Xie, Erik Franz, Mengyu Chu, Nils Thuerey, Maximilian Werhahn
+# Copyright 2018 You Xie, Erik Franz, Mengyu Chu, Nils Thuerey
 #
 #******************************************************************************
 
@@ -237,7 +237,7 @@ if upsampled_data:
 	elif upsampling_mode == 3:
 	    lowfilename_2 = "density_low_t%04d_1x1" % (outNNTestNo) + "_%04d.uni"
 else:
-	select_random_data = 1.0
+	select_random_data = 0.5
 	
 min_data_fraction = 0.08 # minimum data fraction (mostly only used for full network (8x scaling)
 	
@@ -328,12 +328,12 @@ else:
 		mfl_2= np.append(mfl_tempo_2, mfl_2)
 		mol_2 = np.append(np.zeros(lowparalen_2), np.ones(lowparalen_2))
 		mol_2 = np.append(mol_2, np.ones(lowparalen_2)*2)		
-		floader_2 = FDL.FluidDataLoader( print_info=3, base_path=packedSimPath, add_adj_idcs = add_adj_idcs, base_path_y = packedSimPath, numpy_seed = randSeed, conv_slices = True, conv_axis = transpose_axis, select_random = select_random_data, density_threshold = 0.005, axis_scaling_y = scale_y, axis_scaling = scale, filename=lowfilename, oldNamingScheme=False, filename_y=lowfilename_2, filename_index_max=frame_max,filename_index_min = frame_min, indices=dirIDs, data_fraction=max(data_fraction*2/currentUpres,min_data_fraction), multi_file_list=mfl_2, multi_file_idxOff=mol_2, multi_file_list_y=mfh , multi_file_idxOff_y=moh) # data_fraction=0.1
+		floader_2 = FDL.FluidDataLoader( print_info=0, base_path=packedSimPath, add_adj_idcs = add_adj_idcs, base_path_y = packedSimPath, numpy_seed = randSeed, conv_slices = True, conv_axis = transpose_axis, select_random = select_random_data, density_threshold = 0.005, axis_scaling_y = scale_y, axis_scaling = scale, filename=lowfilename, oldNamingScheme=False, filename_y=lowfilename_2, filename_index_max=frame_max,filename_index_min = frame_min, indices=dirIDs, data_fraction=max(data_fraction*2/currentUpres,min_data_fraction), multi_file_list=mfl_2, multi_file_idxOff=mol_2, multi_file_list_y=mfh , multi_file_idxOff_y=moh) # data_fraction=0.1
 		print('loaded low_res')
 	
 	# load low and high res data 
 
-	floader = FDL.FluidDataLoader( print_info=3, base_path=packedSimPath, add_adj_idcs = add_adj_idcs, base_path_y = packedSimPath, numpy_seed = randSeed, conv_slices = True, conv_axis = transpose_axis, select_random = select_random_data, density_threshold = 0.005, axis_scaling_y = scale_y, axis_scaling = scale, filename=lowfilename, oldNamingScheme=False, filename_y=currentHighFileName, filename_index_max=frame_max,filename_index_min = frame_min, indices=dirIDs, data_fraction=max(data_fraction*2/currentUpres,min_data_fraction), multi_file_list=mfl, multi_file_idxOff=mol, multi_file_list_y=mfh , multi_file_idxOff_y=moh) # data_fraction=0.1
+	floader = FDL.FluidDataLoader( print_info=0, base_path=packedSimPath, add_adj_idcs = add_adj_idcs, base_path_y = packedSimPath, numpy_seed = randSeed, conv_slices = True, conv_axis = transpose_axis, select_random = select_random_data, density_threshold = 0.005, axis_scaling_y = scale_y, axis_scaling = scale, filename=lowfilename, oldNamingScheme=False, filename_y=currentHighFileName, filename_index_max=frame_max,filename_index_min = frame_min, indices=dirIDs, data_fraction=max(data_fraction*2/currentUpres,min_data_fraction), multi_file_list=mfl, multi_file_idxOff=mol, multi_file_list_y=mfh , multi_file_idxOff_y=moh) # data_fraction=0.1
 if useDataAugmentation:
 	tiCr.initDataAugmentation(rot=rot, minScale=minScale, maxScale=maxScale ,flip=flip)
 
@@ -1075,7 +1075,7 @@ else: #setup for generating output with trained model
 	elif upsampling_mode == 0:
 		x_in = x
 	elif upsampling_mode == 1 or upsampling_mode == 3:
-		x_in = tf.concat((tf.reshape(y, shape = [-1, tileSizeHigh, tileSizeHigh, 1]), tf.image.resize_images(tf.slice(tf.reshape(x, shape = [-1, tileSizeLow, tileSizeLow, n_inputChannels]),[0,0,0,0],[-1,tileSizeLow,tileSizeLow, n_inputChannels]), tf.constant([tileSizeHigh, tileSizeHigh], dtype= tf.int32), method=0)), axis = 3)
+		x_in = tf.concat((tf.reshape(y, shape = [-1, tileSizeHigh, tileSizeHigh, 1]), tf.image.resize_images(tf.slice(tf.reshape(x, shape = [-1, tileSizeLow, tileSizeLow, n_inputChannels]),[0,0,0,0],[-1,tileSizeLow,tileSizeLow, n_inputChannels]), tf.constant([tileSizeHigh, tileSizeHigh], dtype= tf.int32), method=1)), axis = 3)
 	
 	# TODO: full pipeline (using two generators, e.g.)
 	sampler = gen_model(x_in, use_batch_norm=bn, reuse = tf.AUTO_REUSE, currentUpres = int(round(math.log(upRes, 2))), train=False, percentage = percentage, output = True)
