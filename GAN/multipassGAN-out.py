@@ -1,3 +1,9 @@
+#******************************************************************************
+#
+# tempoGAN: A Temporally Coherent, Volumetric GAN for Super-resolution Fluid Flow
+# Copyright 2018 You Xie, Erik Franz, Mengyu Chu, Nils Thuerey, Maximilian Werhahn
+#
+#******************************************************************************
 
 import time
 import shutil
@@ -152,6 +158,11 @@ if not load_model_test_1 == -1:
 		load_path_ema_1 = basePath + 'test_%04d/model_ema_%04d.ckpt' % (load_model_test_1, load_model_no_1)
 	else:
 		load_path_1 = basePath + 'test_%04d/model_ema_%04d.ckpt' % (load_model_test_1, load_model_no_1)
+	if outputOnly:
+		out_path_prefix = 'out_%04d-%04d' % (load_model_test_1,load_model_no_1)
+		test_path,_ = ph.getNextGenericPath(out_path_prefix, 0, basePath + 'test_%04d/' % load_model_test_1)
+	else:
+		test_path,_ = ph.getNextTestPath(testPathStartNo, basePath)
 
 if not load_model_test_2 == -1:
 	if not os.path.exists(basePath + 'test_%04d/' % load_model_test_2):
@@ -337,36 +348,42 @@ percentage = tf.placeholder(tf.float32)
 
 # first generator
 x_in = x
-with tf.variable_scope("gen_1", reuse=True) as scope:
-	sampler = gen_model(x_in, use_batch_norm=batch_norm, reuse = tf.AUTO_REUSE, currentUpres = int(round(math.log(upRes, 2))), train=False, percentage = percentage, output = True, firstGen = True, filterSize = filterSize_1, startFms = start_fms_1, maxFms = max_fms_1, add_adj_idcs = add_adj_idcs1, first_nn_arch = firstNNArch, use_res_net=use_res_net1)
+if not load_model_test_1 == -1:
+	with tf.variable_scope("gen_1", reuse=True) as scope:
+		sampler = gen_model(x_in, use_batch_norm=batch_norm, reuse = tf.AUTO_REUSE, currentUpres = int(round(math.log(upRes, 2))), train=False, percentage = percentage, output = True, firstGen = True, filterSize = filterSize_1, startFms = start_fms_1, maxFms = max_fms_1, add_adj_idcs = add_adj_idcs1, first_nn_arch = firstNNArch, use_res_net=use_res_net1)
 	
 # second generator
-x_in_2 = tf.concat((tf.reshape(y, shape = [-1, tileSizeHigh, tileSizeHigh, 1]), tf.image.resize_images(tf.reshape(x, shape = [-1, tileSizeLow, tileSizeLow, n_inputChannels]), tf.constant([tileSizeHigh, tileSizeHigh], dtype= tf.int32), method=1)), axis = 3)
-with tf.variable_scope("gen_2", reuse=True) as scope:
-	sampler_2 = gen_model(x_in_2, use_batch_norm=batch_norm, reuse = tf.AUTO_REUSE, currentUpres = int(round(math.log(upRes, 2))), train=False, percentage = percentage, output = True, firstGen = False, filterSize = filterSize_2, startFms = start_fms_2, maxFms = max_fms_2, add_adj_idcs = add_adj_idcs2, first_nn_arch = False, use_res_net=use_res_net2)
+if not load_model_test_2 == -1:
+	x_in_2 = tf.concat((tf.reshape(y, shape = [-1, tileSizeHigh, tileSizeHigh, 1]), tf.image.resize_images(tf.reshape(x, shape = [-1, tileSizeLow, tileSizeLow, n_inputChannels]), tf.constant([tileSizeHigh, tileSizeHigh], dtype= tf.int32), method=1)), axis = 3)
+	with tf.variable_scope("gen_2", reuse=True) as scope:
+		sampler_2 = gen_model(x_in_2, use_batch_norm=batch_norm, reuse = tf.AUTO_REUSE, currentUpres = int(round(math.log(upRes, 2))), train=False, percentage = percentage, output = True, firstGen = False, filterSize = filterSize_2, startFms = start_fms_2, maxFms = max_fms_2, add_adj_idcs = add_adj_idcs2, first_nn_arch = False, use_res_net=use_res_net2)
 	
 # second generator
-x_in_3 = tf.concat((tf.reshape(y, shape = [-1, tileSizeHigh, tileSizeHigh, 1]), tf.image.resize_images(tf.reshape(x, shape = [-1, tileSizeLow, tileSizeLow, n_inputChannels]), tf.constant([tileSizeHigh, tileSizeHigh], dtype= tf.int32), method=1)), axis = 3)
-with tf.variable_scope("gen_3", reuse=True) as scope:
-	sampler_3 = gen_model(x_in_3, use_batch_norm=batch_norm, reuse = tf.AUTO_REUSE, currentUpres = int(round(math.log(upRes, 2))), train=False, percentage = percentage, output = True, firstGen = False, filterSize = filterSize_3, startFms = start_fms_3, maxFms = max_fms_3, add_adj_idcs = add_adj_idcs3, first_nn_arch = False, use_res_net=use_res_net3)
+if not load_model_test_3 == -1:
+	x_in_3 = tf.concat((tf.reshape(y, shape = [-1, tileSizeHigh, tileSizeHigh, 1]), tf.image.resize_images(tf.reshape(x, shape = [-1, tileSizeLow, tileSizeLow, n_inputChannels]), tf.constant([tileSizeHigh, tileSizeHigh], dtype= tf.int32), method=1)), axis = 3)
+	with tf.variable_scope("gen_3", reuse=True) as scope:
+		sampler_3 = gen_model(x_in_3, use_batch_norm=batch_norm, reuse = tf.AUTO_REUSE, currentUpres = int(round(math.log(upRes, 2))), train=False, percentage = percentage, output = True, firstGen = False, filterSize = filterSize_3, startFms = start_fms_3, maxFms = max_fms_3, add_adj_idcs = add_adj_idcs3, first_nn_arch = False, use_res_net=use_res_net3)
 	
-gen1vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="gen_1")
-gen1dict = dict((var.name[6:len(var.name)-2],var) for var in gen1vars)
-saver = tf.train.Saver(var_list = gen1dict)
-saver.restore(sess, load_path_1)
-print("Model 1 restored from %s." % load_path_1)
+if not load_model_test_1 == -1:
+	gen1vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="gen_1")
+	gen1dict = dict((var.name[6:len(var.name)-2],var) for var in gen1vars)
+	saver = tf.train.Saver(var_list = gen1dict)
+	saver.restore(sess, load_path_1)
+	print("Model 1 restored from %s." % load_path_1)
 
-gen2vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="gen_2")
-gen2dict = dict((var.name[6:len(var.name)-2],var) for var in gen2vars)
-saver = tf.train.Saver(var_list = gen2dict)
-saver.restore(sess, load_path_2)
-print("Model 2 restored from %s." % load_path_2)
+if not load_model_test_2 == -1:
+	gen2vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="gen_2")
+	gen2dict = dict((var.name[6:len(var.name)-2],var) for var in gen2vars)
+	saver = tf.train.Saver(var_list = gen2dict)
+	saver.restore(sess, load_path_2)
+	print("Model 2 restored from %s." % load_path_2)
 
-gen3vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="gen_3")
-gen3dict = dict((var.name[6:len(var.name)-2],var) for var in gen3vars)
-saver = tf.train.Saver(var_list = gen3dict)
-saver.restore(sess, load_path_3)
-print("Model 3 restored from %s." % load_path_3)
+if not load_model_test_3 == -1:
+	gen3vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="gen_3")
+	gen3dict = dict((var.name[6:len(var.name)-2],var) for var in gen3vars)
+	saver = tf.train.Saver(var_list = gen3dict)
+	saver.restore(sess, load_path_3)
+	print("Model 3 restored from %s." % load_path_3)
 
 
 # for two different networks, first upsamples two dimensions, last one upsamples one dim
@@ -377,200 +394,201 @@ def generate3DUniForNewNetwork(imageindex = 0, outPath = '../', inputPer = 3.0, 
 	
 	batch_xs_tile = x_3d[imageindex]
 	
-	# z y x -> 2d conv on y - x (or different combination of axis, depending on transposeAxis)
-	# and switch velocity channels depending on orientation
-	if transposeAxis == 1:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,upRes,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeHigh, simSizeLow, n_inputChannels])
-		batch_xs_in = np.reshape(batch_xs_in.transpose(1,0,2,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
-		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
-		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,2:3])
-		batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)	
-	elif transposeAxis == 2:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
-		batch_xs_in = np.reshape(batch_xs_in.transpose(2,1,0,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
-		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
-		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,1:2])
-		batch_xs_in[:,:,:,1:2] = np.copy(temp_vel)
-	elif transposeAxis == 3:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
-		batch_xs_in = np.reshape(batch_xs_in.transpose(2,0,1,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
-		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
-		temp_vel2 = np.copy(batch_xs_in[:,:,:,2:3])
-		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,1:2])
-		batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)
-		batch_xs_in[:,:,:,1:2] = np.copy(temp_vel2)
-	else:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[upRes,1,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeLow, n_inputChannels])					
+	if not load_model_test_1 == -1:
+		# z y x -> 2d conv on y - x (or different combination of axis, depending on transposeAxis)
+		# and switch velocity channels depending on orientation
+		if transposeAxis == 1:
+			batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,upRes,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeHigh, simSizeLow, n_inputChannels])
+			batch_xs_in = np.reshape(batch_xs_in.transpose(1,0,2,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
+			temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
+			batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,2:3])
+			batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)	
+		elif transposeAxis == 2:
+			batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
+			batch_xs_in = np.reshape(batch_xs_in.transpose(2,1,0,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
+			temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
+			batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,1:2])
+			batch_xs_in[:,:,:,1:2] = np.copy(temp_vel)
+		elif transposeAxis == 3:
+			batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
+			batch_xs_in = np.reshape(batch_xs_in.transpose(2,0,1,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
+			temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
+			temp_vel2 = np.copy(batch_xs_in[:,:,:,2:3])
+			batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,1:2])
+			batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)
+			batch_xs_in[:,:,:,1:2] = np.copy(temp_vel2)
+		else:
+			batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[upRes,1,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeLow, n_inputChannels])					
+				
+		if add_adj_idcs1:		
+			batch_xs_in = np.concatenate((batch_xs_in, np.zeros_like(batch_xs_in[:,:,:,0:1])),  axis= 3)		
+			batch_xs_in = np.concatenate((batch_xs_in, np.zeros_like(batch_xs_in[:,:,:,0:1])),  axis= 3)		
+					
+			for i in range(batch_xs_in.shape[0]):		
+				if i == 0:		
+					batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = np.zeros_like(batch_xs_in[i:i+1,:,:,0:1])		
+					batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2] = batch_xs_in[i+1:i+2,:,:,0:1]				
+				elif i == batch_xs_in.shape[0]-1:		
+					batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = batch_xs_in[i-1:i,:,:,0:1]			
+					batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2]= np.zeros_like(batch_xs_in[i-1:i,:,:,0:1])		
+				else:		
+					batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = batch_xs_in[i-1:i,:,:,0:1]				
+					batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2] = batch_xs_in[i+1:i+2,:,:,0:1]	
+					
+		# start generating output of first network
+		batch_sz_out = 8
+		run_metadata = tf.RunMetadata()
+		
+		start = time.time()
+		for j in range(0,batch_xs_in.shape[0]//batch_sz_out):
+			#	x in shape (z,y,x,c)
+			# 	-> 512 x 512 x 512
+			results = sess.run(sampler, feed_dict={x: batch_xs_in[j*batch_sz_out:(j+1)*batch_sz_out].reshape(-1, n_input), percentage : inputPer, train: False})
+			intermed_res1.extend(results)	
 			
-	if add_adj_idcs1:		
-		batch_xs_in = np.concatenate((batch_xs_in, np.zeros_like(batch_xs_in[:,:,:,0:1])),  axis= 3)		
-		batch_xs_in = np.concatenate((batch_xs_in, np.zeros_like(batch_xs_in[:,:,:,0:1])),  axis= 3)		
-				
-		for i in range(batch_xs_in.shape[0]):		
-			if i == 0:		
-				batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = np.zeros_like(batch_xs_in[i:i+1,:,:,0:1])		
-				batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2] = batch_xs_in[i+1:i+2,:,:,0:1]				
-			elif i == batch_xs_in.shape[0]-1:		
-				batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = batch_xs_in[i-1:i,:,:,0:1]			
-				batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2]= np.zeros_like(batch_xs_in[i-1:i,:,:,0:1])		
-			else:		
-				batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = batch_xs_in[i-1:i,:,:,0:1]				
-				batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2] = batch_xs_in[i+1:i+2,:,:,0:1]	
-				
-	# start generating output of first network
-	batch_sz_out = 8
-	run_metadata = tf.RunMetadata()
-	
-	start = time.time()
-	for j in range(0,batch_xs_in.shape[0]//batch_sz_out):
-		#	x in shape (z,y,x,c)
-		# 	-> 512 x 512 x 512
-		results = sess.run(sampler, feed_dict={x: batch_xs_in[j*batch_sz_out:(j+1)*batch_sz_out].reshape(-1, n_input), percentage : inputPer, train: False})
-		intermed_res1.extend(results)	
+			# exact timing of network performance...
+			if 0:
+				fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+				chrome_trace = fetched_timeline.generate_chrome_trace_format()
+				with open('timeline_8x_%04d.json'%(j), 'w') as f:
+					f.write(chrome_trace)
+		end = time.time()
 		
-		# exact timing of network performance...
-		if 0:
-			fetched_timeline = timeline.Timeline(run_metadata.step_stats)
-			chrome_trace = fetched_timeline.generate_chrome_trace_format()
-			with open('timeline_8x_%04d.json'%(j), 'w') as f:
-				f.write(chrome_trace)
-	end = time.time()
-	
-	print("time for first network: {0:.6f}".format(end-start))
-		
-	dim_output = np.copy(np.array(intermed_res1).reshape(simSizeHigh, simSizeHigh, simSizeHigh)).transpose(2,1,0)
-		
-	save_img_3d( outPath + 'source_1st_{:04d}.png'.format(imageindex+frame_min), dim_output/80)	
+		print("time for first network: {0:.6f}".format(end-start))
+			
+		dim_output = np.copy(np.array(intermed_res1).reshape(simSizeHigh, simSizeHigh, simSizeHigh)).transpose(2,1,0)
+			
+		save_img_3d( outPath + 'source_1st_{:04d}.png'.format(imageindex+frame_min), dim_output/80)	
 
-	if transposeAxis == 3:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,upRes,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeHigh, simSizeLow, n_inputChannels])
-		batch_xs_in = np.reshape(batch_xs_in.transpose(1,0,2,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
-		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
-		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,2:3])
-		batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)	
-	elif transposeAxis == 0:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
-		batch_xs_in = np.reshape(batch_xs_in.transpose(2,1,0,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
-		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
-		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,1:2])
-		batch_xs_in[:,:,:,1:2] = np.copy(temp_vel)
-	elif transposeAxis == 1:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
-		batch_xs_in = np.reshape(batch_xs_in.transpose(2,0,1,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
-		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
-		temp_vel2 = np.copy(batch_xs_in[:,:,:,2:3])
-		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,1:2])
-		batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)
-		batch_xs_in[:,:,:,1:2] = np.copy(temp_vel2)
-	else:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[upRes,1,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeLow, n_inputChannels])					
+	if not load_model_test_2 == -1:
+		if transposeAxis == 3:
+			batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,upRes,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeHigh, simSizeLow, n_inputChannels])
+			batch_xs_in = np.reshape(batch_xs_in.transpose(1,0,2,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
+			temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
+			batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,2:3])
+			batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)	
+		elif transposeAxis == 0:
+			batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
+			batch_xs_in = np.reshape(batch_xs_in.transpose(2,1,0,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
+			temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
+			batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,1:2])
+			batch_xs_in[:,:,:,1:2] = np.copy(temp_vel)
+		elif transposeAxis == 1:
+			batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
+			batch_xs_in = np.reshape(batch_xs_in.transpose(2,0,1,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
+			temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
+			temp_vel2 = np.copy(batch_xs_in[:,:,:,2:3])
+			batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,1:2])
+			batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)
+			batch_xs_in[:,:,:,1:2] = np.copy(temp_vel2)
+		else:
+			batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[upRes,1,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeLow, n_inputChannels])					
+				
+		if add_adj_idcs2:		
+			batch_xs_in = np.concatenate((batch_xs_in, np.zeros_like(batch_xs_in[:,:,:,0:1])),  axis= 3)		
+					
+			for i in range(batch_xs_in.shape[0]):		
+				if i == 0:		
+					batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = np.zeros_like(batch_xs_in[i:i+1,:,:,0:1])		
+					batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2] = batch_xs_in[i+1:i+2,:,:,0:1]				
+				elif i == batch_xs_in.shape[0]-1:		
+					batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = batch_xs_in[i-1:i,:,:,0:1]			
+					batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2]= np.zeros_like(batch_xs_in[i-1:i,:,:,0:1])		
+				else:		
+					batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = batch_xs_in[i-1:i,:,:,0:1]				
+					batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2] = batch_xs_in[i+1:i+2,:,:,0:1]	
+					
+		intermed_res1 = []
+		batch_sz_out = 2
+		
+		start = time.time()
+		for j in range(0,batch_xs_in.shape[0]//batch_sz_out):
+			#	x in shape (z,y,x,c)
+			# 	-> 64 x 256 x 256
+			results = sess.run(sampler_2, feed_dict={x: batch_xs_in[j*batch_sz_out:(j+1)*batch_sz_out].reshape(-1, n_input), y: dim_output[j*batch_sz_out:(j+1)*batch_sz_out].reshape(-1, n_output) ,percentage : inputPer, train: False})
+			intermed_res1.extend(results)	
 			
-	if add_adj_idcs2:		
-		batch_xs_in = np.concatenate((batch_xs_in, np.zeros_like(batch_xs_in[:,:,:,0:1])),  axis= 3)		
-				
-		for i in range(batch_xs_in.shape[0]):		
-			if i == 0:		
-				batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = np.zeros_like(batch_xs_in[i:i+1,:,:,0:1])		
-				batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2] = batch_xs_in[i+1:i+2,:,:,0:1]				
-			elif i == batch_xs_in.shape[0]-1:		
-				batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = batch_xs_in[i-1:i,:,:,0:1]			
-				batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2]= np.zeros_like(batch_xs_in[i-1:i,:,:,0:1])		
-			else:		
-				batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = batch_xs_in[i-1:i,:,:,0:1]				
-				batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2] = batch_xs_in[i+1:i+2,:,:,0:1]	
-				
-	intermed_res1 = []
-	batch_sz_out = 2
-	
-	start = time.time()
-	for j in range(0,batch_xs_in.shape[0]//batch_sz_out):
-		#	x in shape (z,y,x,c)
-		# 	-> 64 x 256 x 256
-		results = sess.run(sampler_2, feed_dict={x: batch_xs_in[j*batch_sz_out:(j+1)*batch_sz_out].reshape(-1, n_input), y: dim_output[j*batch_sz_out:(j+1)*batch_sz_out].reshape(-1, n_output) ,percentage : inputPer, train: False})
-		intermed_res1.extend(results)	
+			# exact timing of network performance...
+			if 0:
+				fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+				chrome_trace = fetched_timeline.generate_chrome_trace_format()
+				with open('timeline_8x_%04d.json'%(j), 'w') as f:
+					f.write(chrome_trace)
+		end = time.time()
 		
-		# exact timing of network performance...
-		if 0:
-			fetched_timeline = timeline.Timeline(run_metadata.step_stats)
-			chrome_trace = fetched_timeline.generate_chrome_trace_format()
-			with open('timeline_8x_%04d.json'%(j), 'w') as f:
-				f.write(chrome_trace)
-	end = time.time()
-	
-	print("time for second network: {0:.6f}".format(end-start))
-	
-	#dim_output = np.array(intermed_res1).reshape(simSizeHigh, simSizeHigh, simSizeHigh).transpose(1,2,0)
+		print("time for second network: {0:.6f}".format(end-start))
+		
+		dim_output = np.array(intermed_res1).reshape(simSizeHigh, simSizeHigh, simSizeHigh).transpose(1,2,0)
+					
+		save_img_3d( outPath + 'source_2nd_{:04d}.png'.format(imageindex+frame_min), dim_output/80)	
+		
+	if not load_model_test_3 == -1:
+		if transposeAxis == 0:
+			batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,upRes,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeHigh, simSizeLow, n_inputChannels])
+			batch_xs_in = np.reshape(batch_xs_in.transpose(1,0,2,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
+			temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
+			batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,2:3])
+			batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)	
+		elif transposeAxis == 3:
+			batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
+			batch_xs_in = np.reshape(batch_xs_in.transpose(0,2,1,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
+			temp_vel = np.copy(batch_xs_in[:,:,:,2:3])
+			batch_xs_in[:,:,:,2:3] = np.copy(batch_xs_in[:,:,:,1:2])
+			batch_xs_in[:,:,:,1:2] = np.copy(temp_vel)
+		elif transposeAxis == 2:
+			batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
+			batch_xs_in = np.reshape(batch_xs_in.transpose(1,2,0,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
+			temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
+			temp_vel2 = np.copy(batch_xs_in[:,:,:,13])
+			batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,2:3])
+			batch_xs_in[:,:,:,2:3] = np.copy(batch_xs_in[:,:,:,1:2])
+			batch_xs_in[:,:,:,1:2] = np.copy(temp_vel)
+		else:
+			batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[upRes,1,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeLow, n_inputChannels])					
 				
-	save_img_3d( outPath + 'source_2nd_{:04d}.png'.format(imageindex+frame_min), dim_output/80)	
-	
-	if transposeAxis == 0:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,upRes,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeHigh, simSizeLow, n_inputChannels])
-		batch_xs_in = np.reshape(batch_xs_in.transpose(1,0,2,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
-		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
-		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,2:3])
-		batch_xs_in[:,:,:,2:3] = np.copy(temp_vel)	
-	elif transposeAxis == 3:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
-		batch_xs_in = np.reshape(batch_xs_in.transpose(0,2,1,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
-		temp_vel = np.copy(batch_xs_in[:,:,:,2:3])
-		batch_xs_in[:,:,:,2:3] = np.copy(batch_xs_in[:,:,:,1:2])
-		batch_xs_in[:,:,:,1:2] = np.copy(temp_vel)
-	elif transposeAxis == 2:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[1,1,upRes,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeHigh, n_inputChannels])	
-		batch_xs_in = np.reshape(batch_xs_in.transpose(1,2,0,3),(-1, simSizeLow, simSizeLow, n_inputChannels))
-		temp_vel = np.copy(batch_xs_in[:,:,:,3:4])
-		temp_vel2 = np.copy(batch_xs_in[:,:,:,13])
-		batch_xs_in[:,:,:,3:4] = np.copy(batch_xs_in[:,:,:,2:3])
-		batch_xs_in[:,:,:,2:3] = np.copy(batch_xs_in[:,:,:,1:2])
-		batch_xs_in[:,:,:,1:2] = np.copy(temp_vel)
-	else:
-		batch_xs_in = np.reshape(scipy.ndimage.zoom(batch_xs_tile,[upRes,1,1,1] , order = 1, mode = 'constant', cval = 0.0), [-1, simSizeLow, simSizeLow, n_inputChannels])					
+		if add_adj_idcs3:		
+			batch_xs_in = np.concatenate((batch_xs_in, np.zeros_like(batch_xs_in[:,:,:,0:1])),  axis= 3)		
+					
+			for i in range(batch_xs_in.shape[0]):		
+				if i == 0:		
+					batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = np.zeros_like(batch_xs_in[i:i+1,:,:,0:1])		
+					batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2] = batch_xs_in[i+1:i+2,:,:,0:1]				
+				elif i == batch_xs_in.shape[0]-1:		
+					batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = batch_xs_in[i-1:i,:,:,0:1]			
+					batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2]= np.zeros_like(batch_xs_in[i-1:i,:,:,0:1])		
+				else:		
+					batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = batch_xs_in[i-1:i,:,:,0:1]				
+					batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2] = batch_xs_in[i+1:i+2,:,:,0:1]	
+					
+		intermed_res1 = []
+		batch_sz_out = 2
+		
+		start = time.time()
+		for j in range(0,batch_xs_in.shape[0]//batch_sz_out):
+			#	x in shape (z,y,x,c)
+			# 	-> 64 x 256 x 256
+			results = sess.run(sampler_3, feed_dict={x: batch_xs_in[j*batch_sz_out:(j+1)*batch_sz_out].reshape(-1, n_input), y: dim_output[j*batch_sz_out:(j+1)*batch_sz_out].reshape(-1, n_output) ,percentage : inputPer, train: False})
+			intermed_res1.extend(results)	
 			
-	if add_adj_idcs3:		
-		batch_xs_in = np.concatenate((batch_xs_in, np.zeros_like(batch_xs_in[:,:,:,0:1])),  axis= 3)		
-				
-		for i in range(batch_xs_in.shape[0]):		
-			if i == 0:		
-				batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = np.zeros_like(batch_xs_in[i:i+1,:,:,0:1])		
-				batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2] = batch_xs_in[i+1:i+2,:,:,0:1]				
-			elif i == batch_xs_in.shape[0]-1:		
-				batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = batch_xs_in[i-1:i,:,:,0:1]			
-				batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2]= np.zeros_like(batch_xs_in[i-1:i,:,:,0:1])		
-			else:		
-				batch_xs_in[i:i+1,:,:,n_inputChannels:n_inputChannels+1] = batch_xs_in[i-1:i,:,:,0:1]				
-				batch_xs_in[i:i+1,:,:,n_inputChannels+1:n_inputChannels+2] = batch_xs_in[i+1:i+2,:,:,0:1]	
-				
-	intermed_res1 = []
-	batch_sz_out = 2
-	
-	start = time.time()
-	for j in range(0,batch_xs_in.shape[0]//batch_sz_out):
-		#	x in shape (z,y,x,c)
-		# 	-> 64 x 256 x 256
-		results = sess.run(sampler_3, feed_dict={x: batch_xs_in[j*batch_sz_out:(j+1)*batch_sz_out].reshape(-1, n_input), y: dim_output[j*batch_sz_out:(j+1)*batch_sz_out].reshape(-1, n_output) ,percentage : inputPer, train: False})
-		intermed_res1.extend(results)	
+			# exact timing of network performance...
+			if 0:
+				fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+				chrome_trace = fetched_timeline.generate_chrome_trace_format()
+				with open('timeline_8x_%04d.json'%(j), 'w') as f:
+					f.write(chrome_trace)
+		end = time.time()
 		
-		# exact timing of network performance...
-		if 0:
-			fetched_timeline = timeline.Timeline(run_metadata.step_stats)
-			chrome_trace = fetched_timeline.generate_chrome_trace_format()
-			with open('timeline_8x_%04d.json'%(j), 'w') as f:
-				f.write(chrome_trace)
-	end = time.time()
-	
-	print("time for third network: {0:.6f}".format(end-start))
-	
-	#dim_output = np.array(intermed_res1).reshape(simSizeHigh, simSizeHigh, simSizeHigh)
-				
-	if transposeAxis == 0:
-		dim_output = dim_output.transpose(1,0,2)		
-	elif transposeAxis == 3:
-		dim_output = dim_output.transpose(0,2,1)
-	elif transposeAxis == 2:
-		dim_output = dim_output.transpose(2,0,1)	
+		print("time for third network: {0:.6f}".format(end-start))
 		
-	save_img_3d( outPath + 'source_3rd_{:04d}.png'.format(imageindex+frame_min), dim_output/80)	
+		dim_output = np.array(intermed_res1).reshape(simSizeHigh, simSizeHigh, simSizeHigh)							
+							
+		save_img_3d( outPath + 'source_3rd_{:04d}.png'.format(imageindex+frame_min), dim_output/80)	
 	
+	if not load_model_no_2 == -1:
+		dim_output = dim_output.transpose(2,0,1)
+	if not load_model_no_1 == -1:
+		dim_output = dim_output.transpose(2,1,0)
+		
 	# output for images of slices (along every dimension)
 	if 1:
 		for i in range(simSizeHigh // 2 - 1, simSizeHigh // 2 + 1):
@@ -601,6 +619,11 @@ def generate3DUniForNewNetwork(imageindex = 0, outPath = '../', inputPer = 3.0, 
 print('*****OUTPUT ONLY*****')
 #print("{} tiles, {} tiles per image".format(100, 1))
 #print("Generating images (batch size: {}, batches: {})".format(1, 100))
+
+if not load_model_test_3 == -1 and not load_model_test_2 == -1 and not load_model_test_1 == -1:
+	print("At least one network has to be loaded.")
+	exit(1)
+
 
 head_0, _ = uniio.readUni(packedSimPath + "sim_%04d/density_low_%04d.uni"%(fromSim, 0))
 for layerno in range(frame_min,frame_max):

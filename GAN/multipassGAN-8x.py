@@ -237,7 +237,7 @@ if upsampled_data:
 	elif upsampling_mode == 3:
 	    lowfilename_2 = "density_low_t%04d_1x1" % (outNNTestNo) + "_%04d.uni"
 else:
-	select_random_data = 0.5
+	select_random_data = 0.4
 	
 min_data_fraction = 0.08 # minimum data fraction (mostly only used for full network (8x scaling)
 	
@@ -389,9 +389,6 @@ if not outputOnly:
 				y = y.reshape(-1, 1, simSizeHigh, simSizeHigh, 3)			
 	print('done loading')
 
-print(x.shape)	
-print(y.shape)	
-	
 if not outputOnly:	
 	tiCr.addData(x,y)
 	
