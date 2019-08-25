@@ -5,6 +5,8 @@ Public source code for the SCA paper "A Multi-Pass GAN for Fluid Flow Super-Reso
 Paper: https://arxiv.org/pdf/1906.01689.pdf,  
 Video: https://www.youtube.com/watch?v=__WE22dB6AA  
 
+![An example of our 8x model (low-res left, ours right)](resources/teaser5.png)
+
 ## Requirements  
   
 tensorflow >= 1.10  
