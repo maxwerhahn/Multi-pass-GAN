@@ -11,14 +11,14 @@ if 0:
 if 1:
 	## first nn: test 59
 	## second nn: test 409
-	sim_no = 1005
-	min_frame = 30
-	max_frame = 40
+	sim_no = 3006
+	min_frame = 100
+	max_frame = 121
 
 	net1_config = {
 	  "firstNNArch": "1",
-	  "load_model_test_1": "59",
-	  "load_model_no_1": "405",
+	  "load_model_test_1": "0",
+	  "load_model_no_1": "299",
 	  "use_res_net1": "1",
 	  "add_adj_idcs1": "1",
 	  "startFms1": "256",
@@ -27,8 +27,8 @@ if 1:
 	}
 	
 	net2_config = {
-	  "load_model_test_2": "409",
-	  "load_model_no_2": "499",
+	  "load_model_test_2": "-1",
+	  "load_model_no_2": "-1",
 	  "use_res_net2": "1",
 	  "add_adj_idcs2": "0",
 	  "startFms2": "192",
@@ -61,10 +61,8 @@ if 1:
 	# either this command:
 	os.system(python_string)
 
-	#for i in range(20):
 
-	# or these (also stores intermediate results)
-	
+	# or these (also stores intermediate results)	
 	#os.system('python multipassGAN-8x.py randSeed 174213111 upRes 8 use_res_net 1 firstNNArch 1 add_adj_idcs 1 pixelNorm 1 batchNorm 0 out 1 pretrain 0 pretrainDisc 0 tileSize 64 simSize 64 trainingIterations 60000 lambda 5.0 lambda2 0.00001 discRuns 2 genRuns 2 alwaysSave 1 fromSim %04d toSim %04d outputInterval 200 genTestImg 1 dropout 0.5 dataDim 2 batchSize 16 useVelocities 1 useVorticities 0 useK_Eps_Turb 0 useFlags 0 gif 0 genModel gen_resnet discModel disc_binclass basePath ../ packedSimPath ../../ lambda_t 1.0 lambda_t_l2 0.0 frame_max %04d frame_min %04d data_fraction 0.05 adv_flag 1 dataAugmentation 1 premadeTiles 0 rot 1 load_model_test 59 load_model_no 405 velScale 1.0 genUni 1 upsampledData 0 upsamplingMode 2 maxFms 256 startFms 256 filterSize 3 usePixelShuffle 0 loadEmas 0 upsampleMode 1 addBicubicUpsample 1 gpu 0 transposeAxis 0' % (sim_no, sim_no,max_frame,min_frame))
 	
 	#os.system('python multipassGAN-8x.py randSeed 174213111 upRes 8 use_res_net 1 outNNTestNo 59 pixelNorm 1 batchNorm 0 out 1 pretrain 0 pretrainDisc 0 tileSize 64 simSize 64 trainingIterations 60000 lambda 5.0 lambda2 0.00001 discRuns 2 genRuns 2 alwaysSave 1 fromSim %04d toSim %04d outputInterval 200 genTestImg 1 dropout 0.5 dataDim 2 batchSize 16 useVelocities 1 useVorticities 0 useK_Eps_Turb 0 useFlags 0 gif 0 genModel gen_resnet discModel disc_binclass basePath ../ packedSimPath ../../ lambda_t 1.0 lambda_t_l2 0.0 frame_max %04d frame_min %04d data_fraction 0.05 adv_flag 1 dataAugmentation 1 premadeTiles 0 rot 1 load_model_test 409 load_model_no 499 velScale 1.0 genUni 1 upsampledData 1 upsampleMode 1 upsamplingMode 1 maxFms 256 startFms 192 filterSize 5 usePixelShuffle 0 loadEmas 0 addBicubicUpsample 1 gpu 0 transposeAxis 2' % (sim_no, sim_no,max_frame,min_frame))

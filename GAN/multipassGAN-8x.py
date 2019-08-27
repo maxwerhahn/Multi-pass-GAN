@@ -1,7 +1,7 @@
 #******************************************************************************
 #
 # tempoGAN: A Temporally Coherent, Volumetric GAN for Super-resolution Fluid Flow
-# Copyright 2018 You Xie, Erik Franz, Mengyu Chu, Nils Thuerey
+# Copyright 2018 You Xie, Erik Franz, Mengyu Chu, Nils Thuerey, Maximilian Werhahn
 #
 #******************************************************************************
 
@@ -1524,8 +1524,10 @@ def getinput(index = 1, randomtile = True, isTraining = True, batch_size = 1, us
 			batch_xs = np.concatenate((batch_xs, Turbinput), axis = 4)
 			
 	# test for removing density in zero-density input areas.... deactivated for now
-	if not min(np.random.randint(0,6),1) and 0:
+	if not min(np.random.randint(0,20),1) and 1:
 		batch_xs[:,:,:,:,0:1] = 0
+		if add_adj_idcs:
+			batch_xs[:,:,:,:,4:6] = 0
 		batch_xs[:,:,:,:,1:4]*= (1.0  + np.random.rand()*1.5)
 		batch_ys[:,:,:,:,:] = 0
 		

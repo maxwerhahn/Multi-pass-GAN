@@ -614,6 +614,7 @@ def generate3DUniForNewNetwork(imageindex = 0, outPath = '../', inputPer = 3.0, 
 		cond_out = dim_output < 0.0005
 		dim_output[cond_out] = 0
 		uniio.writeUni(packedSimPath + '/sim_%04d/source_%04d.uni'%(fromSim, imageindex+frame_min), head, dim_output)
+		print('stored .uni file')
 	return		
 	
 print('*****OUTPUT ONLY*****')
