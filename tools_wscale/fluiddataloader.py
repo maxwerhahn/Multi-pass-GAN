@@ -392,12 +392,8 @@ class FluidDataLoader(object):
 		# maybe discard slices if they are below some density threshold (because of memory limitations)
 		if self.conv_slices:
 			true_n = 0
-		sim_no = 999
 		n = len(self.xfn)
 		for t in range(n):
-			if "0000" in self.xfn[t]:
-				sim_no+=1
-				print(sim_no)
 			fof = 0 if self.multi_file_idxOff is None else self.multi_file_idxOff[0]
 			fx = self.loadSingleDatum(self.xfn[t], self.np_load_string , fof) 
 
@@ -525,10 +521,6 @@ class FluidDataLoader(object):
 						fx = self.addAdjSlices(fxs)
 					fx = self.removeSlices(fx)
 					fx = self.selectRandomSamples(fx)
-				#if sim_no <= 1019:
-				#	print('increased velocity')
-				#	for i in range(0,17,6):
-				#		fx[:,:,:,i+1:i+4] *= 2.0
 			# finally store t-th data sample
 			if self.conv_slices:
 				self.x[true_n:true_n + fx.shape[0],:] = fx
