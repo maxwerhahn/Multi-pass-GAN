@@ -30,3 +30,6 @@ Either use the file `../datagen/gen_mul_data.py` or similar commands for the fil
 
 ## Training  
 Call `../GAN/example_run_training.py`
+
+## Applying models
+Call `../GAN/example_run_output.py`, pretrained models can be found in the branch "models"
