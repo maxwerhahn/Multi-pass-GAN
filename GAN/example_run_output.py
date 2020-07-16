@@ -9,8 +9,8 @@ if 0:
 
 # 8x multi pass
 if 1:
-	## first nn: test 59
-	## second nn: test 409
+	## first nn: test 0
+	## second nn: test 4
 	sim_no = 3006
 	min_frame = 100
 	max_frame = 120
